@@ -17,6 +17,7 @@
 
 package com.atomgraph.node;
 
+import com.atomgraph.client.locator.PrefixMapper;
 import org.apache.jena.util.FileManager;
 import org.apache.jena.util.LocationMapper;
 import java.util.HashSet;
@@ -51,6 +52,12 @@ import com.atomgraph.server.provider.SPARQLEndpointOriginProvider;
 import com.atomgraph.server.provider.SPARQLEndpointProvider;
 import com.atomgraph.server.provider.SkolemizingModelProvider;
 import com.atomgraph.server.provider.TemplateCallProvider;
+import javax.annotation.PostConstruct;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFFormat;
+import org.apache.jena.riot.RDFWriterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * JAX-RS application class of the Blog app.
@@ -59,6 +66,9 @@ import com.atomgraph.server.provider.TemplateCallProvider;
  */
 public class Application extends com.atomgraph.server.Application
 {
+    
+    private static final Logger log = LoggerFactory.getLogger(Application.class);
+    
     private final Set<Class<?>> classes = new HashSet<>();
     private final Set<Object> singletons = new HashSet<>();
     
@@ -96,7 +106,24 @@ public class Application extends com.atomgraph.server.Application
 	singletons.add(new ModelXSLTWriter()); // writes XHTML responses
 	singletons.add(new TemplatesProvider(servletConfig)); // loads XSLT stylesheet
     }
-    
+
+    @PostConstruct
+    @Override
+    public void init()
+    {
+	// initialize mapping for locally stored vocabularies
+	LocationMapper mapper = new PrefixMapper("prefix-mapping.n3"); // TO-DO: check if file exists?
+	LocationMapper.setGlobalLocationMapper(mapper);
+	if (log.isDebugEnabled()) log.debug("LocationMapper.get(): {}", LocationMapper.get());
+        
+        super.init(); // init Processor
+        
+        if (log.isTraceEnabled()) log.trace("Application.init() with Classes: {} and Singletons: {}", getClasses(), getSingletons());
+
+        // register plain RDF/XML writer as default
+        RDFWriterRegistry.register(Lang.RDFXML, RDFFormat.RDFXML_PLAIN);
+    }
+
     @Override
     public Set<Class<?>> getClasses()
     {
