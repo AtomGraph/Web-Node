@@ -16,7 +16,7 @@
 
 package com.atomgraph.node.filter.response;
 
-import com.atomgraph.client.vocabulary.GC;
+import com.atomgraph.client.vocabulary.AC;
 import com.atomgraph.core.util.StateBuilder;
 import java.net.URI;
 import javax.ws.rs.core.Context;
@@ -41,7 +41,7 @@ public class URIRewriteFilter extends com.atomgraph.client.filter.response.URIRe
         URI relative = getUriInfo().getBaseUri().relativize(uri);
         if (relative.isAbsolute()) // only build state for URIs external to the application
             StateBuilder.fromResource(baseUri).
-                property(GC.uri, resource).build();
+                property(AC.uri, resource).build();
     }
 
     public UriInfo getUriInfo()

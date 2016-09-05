@@ -27,14 +27,14 @@ import javax.ws.rs.core.Context;
 import org.apache.jena.ontology.OntDocumentManager;
 import com.atomgraph.client.provider.MediaTypesProvider;
 import com.atomgraph.client.provider.TemplatesProvider;
-import com.atomgraph.client.vocabulary.GC;
+import com.atomgraph.client.vocabulary.AC;
 import com.atomgraph.client.writer.ModelXSLTWriter;
 import com.atomgraph.core.provider.ClientProvider;
 import com.atomgraph.core.provider.QueryParamProvider;
 import com.atomgraph.core.provider.ResultSetProvider;
 import com.atomgraph.core.provider.UpdateRequestReader;
 import com.atomgraph.core.util.jena.DataManager;
-import com.atomgraph.core.vocabulary.AC;
+import com.atomgraph.core.vocabulary.A;
 import com.atomgraph.server.mapper.ClientExceptionMapper;
 import com.atomgraph.server.mapper.ConfigurationExceptionMapper;
 import com.atomgraph.server.mapper.ModelExceptionMapper;
@@ -151,9 +151,9 @@ public class Application extends com.atomgraph.server.Application
     {
         com.atomgraph.client.util.DataManager manager = new com.atomgraph.client.util.DataManager(LocationMapper.get(),
                 new MediaTypesProvider().getMediaTypes(),
-                getBooleanParam(getServletConfig(), AC.cacheModelLoads),
-                getBooleanParam(getServletConfig(), AC.preemptiveAuth),
-                getBooleanParam(getServletConfig(), GC.resolvingUncached));
+                getBooleanParam(getServletConfig(), A.cacheModelLoads),
+                getBooleanParam(getServletConfig(), A.preemptiveAuth),
+                getBooleanParam(getServletConfig(), AC.resolvingUncached));
         FileManager.setStdLocators(manager);
         return manager;
     }
