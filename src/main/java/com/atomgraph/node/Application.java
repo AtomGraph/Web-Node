@@ -1,5 +1,5 @@
 /**
- *  Copyright 2014 Martynas Jusevičius <martynas@graphity.org>
+ *  Copyright 2014 Martynas Jusevičius <martynas@atomgraph.com>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ import org.slf4j.LoggerFactory;
 /**
  * JAX-RS application class of the Blog app.
  * 
- * @author Martynas Jusevičius <martynas@graphity.org>
+ * @author Martynas Jusevičius <martynas@atomgraph.com>
  */
 public class Application extends com.atomgraph.server.Application
 {

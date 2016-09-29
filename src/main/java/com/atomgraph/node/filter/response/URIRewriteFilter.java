@@ -25,7 +25,7 @@ import org.apache.jena.rdf.model.Resource;
 
 /**
  *
- * @author Martynas Jusevičius <martynas@graphity.org>
+ * @author Martynas Jusevičius <martynas@atomgraph.com>
  */
 public class URIRewriteFilter extends com.atomgraph.client.filter.response.URIRewriteFilter
 {
