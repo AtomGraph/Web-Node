@@ -44,12 +44,6 @@ import com.atomgraph.server.mapper.jena.DatatypeFormatExceptionMapper;
 import com.atomgraph.server.mapper.jena.QueryParseExceptionMapper;
 import com.atomgraph.server.mapper.jena.RiotExceptionMapper;
 import com.atomgraph.server.model.impl.ResourceBase;
-import com.atomgraph.server.provider.DatasetProvider;
-import com.atomgraph.server.provider.GraphStoreOriginProvider;
-import com.atomgraph.server.provider.GraphStoreProvider;
-import com.atomgraph.server.provider.OntologyProvider;
-import com.atomgraph.server.provider.SPARQLEndpointOriginProvider;
-import com.atomgraph.server.provider.SPARQLEndpointProvider;
 import com.atomgraph.server.provider.SkolemizingModelProvider;
 import com.atomgraph.server.provider.TemplateCallProvider;
 import javax.annotation.PostConstruct;
@@ -60,7 +54,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * JAX-RS application class of the Blog app.
+ * JAX-RS application class.
  * 
  * @author Martynas Jusevičius <martynas@atomgraph.com>
  */
@@ -84,14 +78,8 @@ public class Application extends com.atomgraph.server.Application
 	singletons.add(new QueryParamProvider());
 	singletons.add(new UpdateRequestReader());
         singletons.add(new com.atomgraph.core.provider.DataManagerProvider());
-        singletons.add(new DatasetProvider());
         singletons.add(new ClientProvider());
-        singletons.add(new OntologyProvider(servletConfig));
         singletons.add(new TemplateCallProvider());
-	singletons.add(new SPARQLEndpointProvider());
-	singletons.add(new SPARQLEndpointOriginProvider());
-        singletons.add(new GraphStoreProvider());
-        singletons.add(new GraphStoreOriginProvider());
         singletons.add(new RiotExceptionMapper());
 	singletons.add(new ModelExceptionMapper());
 	singletons.add(new DatatypeFormatExceptionMapper());
