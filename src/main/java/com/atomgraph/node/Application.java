@@ -27,6 +27,8 @@ import javax.ws.rs.core.Context;
 import org.apache.jena.ontology.OntDocumentManager;
 import com.atomgraph.client.provider.MediaTypesProvider;
 import com.atomgraph.client.provider.TemplatesProvider;
+import com.atomgraph.client.util.DataManager;
+import com.atomgraph.client.vocabulary.AC;
 import com.atomgraph.client.writer.ModelXSLTWriter;
 import com.atomgraph.core.io.ResultSetProvider;
 import com.atomgraph.core.io.UpdateRequestReader;
@@ -38,7 +40,6 @@ import com.atomgraph.core.provider.QueryParamProvider;
 import com.atomgraph.core.provider.SPARQLClientProvider;
 import com.atomgraph.core.provider.SPARQLEndpointProvider;
 import com.atomgraph.core.provider.ServiceProvider;
-import com.atomgraph.core.util.jena.DataManager;
 import com.atomgraph.core.vocabulary.A;
 import com.atomgraph.server.mapper.ClientExceptionMapper;
 import com.atomgraph.server.mapper.ConfigurationExceptionMapper;
@@ -56,6 +57,7 @@ import com.atomgraph.server.provider.SkolemizingModelProvider;
 import com.atomgraph.server.provider.TemplateCallProvider;
 import com.atomgraph.server.provider.TemplateProvider;
 import javax.annotation.PostConstruct;
+import org.apache.jena.rdf.model.Property;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFFormat;
 import org.apache.jena.riot.RDFWriterRegistry;
@@ -84,6 +86,19 @@ public class Application extends com.atomgraph.server.Application
 	LocationMapper.setGlobalLocationMapper(mapper);
 	if (log.isDebugEnabled()) log.debug("LocationMapper.get(): {}", LocationMapper.get());
 
+        DataManager manager = new DataManager(LocationMapper.get(),
+                new ClientProvider().getClient(),
+                new MediaTypesProvider().getMediaTypes(),
+                getBooleanParam(servletConfig, A.preemptiveAuth),
+                getBooleanParam(servletConfig, AC.resolvingUncached));
+        FileManager.setStdLocators(manager);
+        FileManager.setGlobalFileManager(manager);
+	if (log.isDebugEnabled()) log.debug("FileManager.get(): {}", FileManager.get());
+
+        OntDocumentManager.getInstance().setFileManager(FileManager.get());
+        OntDocumentManager.getInstance().setCacheModels(getCacheSitemap()); // need to re-set after chaning FileManager
+        if (log.isDebugEnabled()) log.debug("OntDocumentManager.getInstance().getFileManager(): {} Cache ontologies: {}", OntDocumentManager.getInstance().getFileManager(), getCacheSitemap());
+        
         // register plain RDF/XML writer as default
         RDFWriterRegistry.register(Lang.RDFXML, RDFFormat.RDFXML_PLAIN);
     }
@@ -92,10 +107,6 @@ public class Application extends com.atomgraph.server.Application
     @Override
     public void init()
     {
-        OntDocumentManager.getInstance().setFileManager(getFileManager(getServletConfig()));
-        OntDocumentManager.getInstance().setCacheModels(getCacheSitemap()); // need to re-set after chaning FileManager
-        if (log.isDebugEnabled()) log.debug("OntDocumentManager.getInstance().getFileManager(): {} Cache ontologies: {}", OntDocumentManager.getInstance().getFileManager(), getCacheSitemap());
-
 	classes.add(ResourceBase.class);
 
         // Server singletons
@@ -135,6 +146,17 @@ public class Application extends com.atomgraph.server.Application
         if (log.isTraceEnabled()) log.trace("Application.init() with Classes: {} and Singletons: {}", classes, singletons);
     }
 
+    public final boolean getBooleanParam(ServletConfig servletConfig, Property property)
+    {
+	if (servletConfig == null) throw new IllegalArgumentException("ServletConfig cannot be null");
+	if (property == null) throw new IllegalArgumentException("Property cannot be null");
+
+        boolean value = false;
+        if (servletConfig.getInitParameter(property.getURI()) != null)
+            value = Boolean.parseBoolean(servletConfig.getInitParameter(property.getURI()));
+        return value;
+    }
+    
     @Override
     public Set<Class<?>> getClasses()
     {
@@ -145,17 +167,6 @@ public class Application extends com.atomgraph.server.Application
     public Set<Object> getSingletons()
     {
 	return singletons;
-    }
-
-    @Override
-    public FileManager getFileManager(ServletConfig servletConfig)
-    {
-        DataManager manager = new DataManager(LocationMapper.get(),
-                new ClientProvider().getClient(),
-                new MediaTypesProvider().getMediaTypes(),
-                getBooleanParam(servletConfig, A.preemptiveAuth));
-        FileManager.setStdLocators(manager);        
-        return manager;
     }
     
 }
