@@ -27,25 +27,34 @@ import javax.ws.rs.core.Context;
 import org.apache.jena.ontology.OntDocumentManager;
 import com.atomgraph.client.provider.MediaTypesProvider;
 import com.atomgraph.client.provider.TemplatesProvider;
-import com.atomgraph.client.vocabulary.AC;
 import com.atomgraph.client.writer.ModelXSLTWriter;
+import com.atomgraph.core.io.ResultSetProvider;
+import com.atomgraph.core.io.UpdateRequestReader;
 import com.atomgraph.core.provider.ClientProvider;
+import com.atomgraph.core.provider.DatasetProvider;
+import com.atomgraph.core.provider.GraphStoreClientProvider;
+import com.atomgraph.core.provider.GraphStoreProvider;
 import com.atomgraph.core.provider.QueryParamProvider;
-import com.atomgraph.core.provider.ResultSetProvider;
-import com.atomgraph.core.provider.UpdateRequestReader;
+import com.atomgraph.core.provider.SPARQLClientProvider;
+import com.atomgraph.core.provider.SPARQLEndpointProvider;
+import com.atomgraph.core.provider.ServiceProvider;
 import com.atomgraph.core.util.jena.DataManager;
 import com.atomgraph.core.vocabulary.A;
 import com.atomgraph.server.mapper.ClientExceptionMapper;
 import com.atomgraph.server.mapper.ConfigurationExceptionMapper;
 import com.atomgraph.server.mapper.ModelExceptionMapper;
 import com.atomgraph.server.mapper.NotFoundExceptionMapper;
+import com.atomgraph.server.mapper.OntologyExceptionMapper;
 import com.atomgraph.server.mapper.SPINArgumentExceptionMapper;
 import com.atomgraph.server.mapper.jena.DatatypeFormatExceptionMapper;
 import com.atomgraph.server.mapper.jena.QueryParseExceptionMapper;
 import com.atomgraph.server.mapper.jena.RiotExceptionMapper;
 import com.atomgraph.server.model.impl.ResourceBase;
+import com.atomgraph.server.provider.ApplicationProvider;
+import com.atomgraph.server.provider.OntologyProvider;
 import com.atomgraph.server.provider.SkolemizingModelProvider;
 import com.atomgraph.server.provider.TemplateCallProvider;
+import com.atomgraph.server.provider.TemplateProvider;
 import javax.annotation.PostConstruct;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFFormat;
@@ -70,46 +79,60 @@ public class Application extends com.atomgraph.server.Application
     {
         super(servletConfig);
         
-	classes.add(ResourceBase.class);
+	// initialize mapping for locally stored vocabularies
+	LocationMapper mapper = new PrefixMapper("prefix-mapping.n3"); // TO-DO: check if file exists?
+	LocationMapper.setGlobalLocationMapper(mapper);
+	if (log.isDebugEnabled()) log.debug("LocationMapper.get(): {}", LocationMapper.get());
 
-        // Server singletons
-	singletons.add(new SkolemizingModelProvider());
-	singletons.add(new ResultSetProvider());
-	singletons.add(new QueryParamProvider());
-	singletons.add(new UpdateRequestReader());
-        singletons.add(new com.atomgraph.core.provider.DataManagerProvider());
-        singletons.add(new ClientProvider());
-        singletons.add(new TemplateCallProvider());
-        singletons.add(new RiotExceptionMapper());
-	singletons.add(new ModelExceptionMapper());
-	singletons.add(new DatatypeFormatExceptionMapper());
-        singletons.add(new NotFoundExceptionMapper());
-        singletons.add(new ClientExceptionMapper());        
-        singletons.add(new ConfigurationExceptionMapper());
-        singletons.add(new SPINArgumentExceptionMapper());
-	singletons.add(new QueryParseExceptionMapper());
-        // Client singletons
-        singletons.add(new MediaTypesProvider());
-        singletons.add(new com.atomgraph.client.provider.DataManagerProvider());
-	singletons.add(new ModelXSLTWriter()); // writes XHTML responses
-	singletons.add(new TemplatesProvider(servletConfig)); // loads XSLT stylesheet
+        // register plain RDF/XML writer as default
+        RDFWriterRegistry.register(Lang.RDFXML, RDFFormat.RDFXML_PLAIN);
     }
 
     @PostConstruct
     @Override
     public void init()
     {
-	// initialize mapping for locally stored vocabularies
-	LocationMapper mapper = new PrefixMapper("prefix-mapping.n3"); // TO-DO: check if file exists?
-	LocationMapper.setGlobalLocationMapper(mapper);
-	if (log.isDebugEnabled()) log.debug("LocationMapper.get(): {}", LocationMapper.get());
-        
-        super.init(); // init Processor
-        
-        if (log.isTraceEnabled()) log.trace("Application.init() with Classes: {} and Singletons: {}", getClasses(), getSingletons());
+        OntDocumentManager.getInstance().setFileManager(getFileManager(getServletConfig()));
+        OntDocumentManager.getInstance().setCacheModels(getCacheSitemap()); // need to re-set after chaning FileManager
+        if (log.isDebugEnabled()) log.debug("OntDocumentManager.getInstance().getFileManager(): {} Cache ontologies: {}", OntDocumentManager.getInstance().getFileManager(), getCacheSitemap());
 
-        // register plain RDF/XML writer as default
-        RDFWriterRegistry.register(Lang.RDFXML, RDFFormat.RDFXML_PLAIN);
+	classes.add(ResourceBase.class);
+
+        // Server singletons
+        singletons.add(new ApplicationProvider(getServletConfig()));
+        singletons.add(new ServiceProvider(getServletConfig()));
+        singletons.add(new OntologyProvider(getServletConfig()));
+        singletons.add(new TemplateProvider());
+        singletons.add(new TemplateCallProvider());
+        singletons.add(new SPARQLEndpointProvider(getServletConfig()));
+        singletons.add(new GraphStoreProvider(getServletConfig()));
+        singletons.add(new DatasetProvider());
+	singletons.add(new SPARQLClientProvider());
+	singletons.add(new GraphStoreClientProvider());        
+	singletons.add(new SkolemizingModelProvider());
+	singletons.add(new ResultSetProvider());
+	singletons.add(new QueryParamProvider());
+	singletons.add(new UpdateRequestReader());
+        //singletons.add(new com.atomgraph.core.provider.MediaTypesProvider());
+        //singletons.add(new DataManagerProvider(getServletConfig()));
+        singletons.add(new ClientProvider());
+        singletons.add(new RiotExceptionMapper());
+	singletons.add(new ModelExceptionMapper());
+	singletons.add(new DatatypeFormatExceptionMapper());
+        singletons.add(new NotFoundExceptionMapper());
+        singletons.add(new ClientExceptionMapper());        
+        singletons.add(new ConfigurationExceptionMapper());
+        singletons.add(new OntologyExceptionMapper());
+        singletons.add(new SPINArgumentExceptionMapper());
+	singletons.add(new QueryParseExceptionMapper());
+        
+        // Client singletons
+        singletons.add(new MediaTypesProvider());
+        singletons.add(new com.atomgraph.client.provider.DataManagerProvider());
+	singletons.add(new ModelXSLTWriter()); // writes XHTML responses
+	singletons.add(new TemplatesProvider(getServletConfig())); // loads XSLT stylesheet
+        
+        if (log.isTraceEnabled()) log.trace("Application.init() with Classes: {} and Singletons: {}", classes, singletons);
     }
 
     @Override
@@ -125,24 +148,13 @@ public class Application extends com.atomgraph.server.Application
     }
 
     @Override
-    public void initOntDocumentManager(FileManager fileManager)
+    public FileManager getFileManager(ServletConfig servletConfig)
     {
-        if (!(OntDocumentManager.getInstance().getFileManager() instanceof DataManager))
-        {
-            FileManager.setGlobalFileManager(fileManager);            
-            super.initOntDocumentManager(fileManager);
-        }
-    }
-
-    @Override
-    public FileManager getFileManager()
-    {
-        com.atomgraph.client.util.DataManager manager = new com.atomgraph.client.util.DataManager(LocationMapper.get(),
+        DataManager manager = new DataManager(LocationMapper.get(),
+                new ClientProvider().getClient(),
                 new MediaTypesProvider().getMediaTypes(),
-                getBooleanParam(getServletConfig(), A.cacheModelLoads),
-                getBooleanParam(getServletConfig(), A.preemptiveAuth),
-                getBooleanParam(getServletConfig(), AC.resolvingUncached));
-        FileManager.setStdLocators(manager);
+                getBooleanParam(servletConfig, A.preemptiveAuth));
+        FileManager.setStdLocators(manager);        
         return manager;
     }
     
