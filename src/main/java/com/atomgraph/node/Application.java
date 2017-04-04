@@ -20,12 +20,10 @@ package com.atomgraph.node;
 import static com.atomgraph.client.Application.getSource;
 import com.atomgraph.client.locator.PrefixMapper;
 import org.apache.jena.util.FileManager;
-import org.apache.jena.util.LocationMapper;
 import java.util.HashSet;
 import java.util.Set;
 import javax.servlet.ServletConfig;
 import javax.ws.rs.core.Context;
-import org.apache.jena.ontology.OntDocumentManager;
 import com.atomgraph.client.provider.MediaTypesProvider;
 import com.atomgraph.client.provider.TemplatesProvider;
 import com.atomgraph.client.util.DataManager;
@@ -45,7 +43,6 @@ import com.atomgraph.core.vocabulary.A;
 import com.atomgraph.core.vocabulary.SD;
 import com.atomgraph.processor.vocabulary.AP;
 import com.atomgraph.processor.vocabulary.LDT;
-import static com.atomgraph.server.Application.getFileManager;
 import com.atomgraph.server.mapper.ClientExceptionMapper;
 import com.atomgraph.server.mapper.ConfigurationExceptionMapper;
 import com.atomgraph.server.mapper.ModelExceptionMapper;
@@ -63,7 +60,6 @@ import com.atomgraph.server.provider.TemplateCallProvider;
 import com.atomgraph.server.provider.TemplateProvider;
 import java.net.URISyntaxException;
 import javax.annotation.PostConstruct;
-import org.apache.jena.ontology.OntModelSpec;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFFormat;
 import org.apache.jena.riot.RDFWriterRegistry;
@@ -71,7 +67,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import javax.xml.transform.Source;
-import static com.atomgraph.server.Application.getOntModelSpec;
+import org.apache.jena.query.Dataset;
+import org.apache.jena.util.LocationMapper;
 
 /**
  * JAX-RS application class.
@@ -92,15 +89,17 @@ public class Application extends com.atomgraph.server.Application
     public Application(@Context ServletConfig servletConfig) throws URISyntaxException, IOException
     {
         this(
-            servletConfig.getInitParameter(A.dataset.getURI()) != null ? servletConfig.getInitParameter(A.dataset.getURI()) : null,
+            servletConfig.getInitParameter(A.dataset.getURI()) != null ? getDataset(servletConfig.getInitParameter(A.dataset.getURI()), null) : null,
             servletConfig.getInitParameter(SD.endpoint.getURI()) != null ? servletConfig.getInitParameter(SD.endpoint.getURI()) : null,
             servletConfig.getInitParameter(A.graphStore.getURI()) != null ? servletConfig.getInitParameter(A.graphStore.getURI()) : null,
             servletConfig.getInitParameter(org.apache.jena.sparql.engine.http.Service.queryAuthUser.getSymbol()) != null ? servletConfig.getInitParameter(org.apache.jena.sparql.engine.http.Service.queryAuthUser.getSymbol()) : null,
             servletConfig.getInitParameter(org.apache.jena.sparql.engine.http.Service.queryAuthPwd.getSymbol()) != null ? servletConfig.getInitParameter(org.apache.jena.sparql.engine.http.Service.queryAuthPwd.getSymbol()) : null,
             servletConfig.getInitParameter(A.preemptiveAuth.getURI()) != null ? Boolean.parseBoolean(servletConfig.getInitParameter(A.preemptiveAuth.getURI())) : false,
-            getFileManager(servletConfig, "/WEB-INF/classes/location-mapping.n3"),
+            getFileManager(new PrefixMapper("prefix-mapping.n3"),
+                    servletConfig.getInitParameter(A.preemptiveAuth.getURI()) != null ? Boolean.parseBoolean(servletConfig.getInitParameter(A.preemptiveAuth.getURI())) : false,
+                    servletConfig.getInitParameter(AC.resolvingUncached.getURI()) != null ? Boolean.parseBoolean(servletConfig.getInitParameter(AC.resolvingUncached.getURI())) : false),
             servletConfig.getInitParameter(LDT.ontology.getURI()) != null ? servletConfig.getInitParameter(LDT.ontology.getURI()) : null,
-            getOntModelSpec(servletConfig),
+            servletConfig.getInitParameter(AP.sitemapRules.getURI()) != null ? servletConfig.getInitParameter(AP.sitemapRules.getURI()) : null,
             servletConfig.getInitParameter(AP.cacheSitemap.getURI()) != null ? Boolean.valueOf(servletConfig.getInitParameter(AP.cacheSitemap.getURI())) : true,
             getSource(servletConfig.getServletContext(), servletConfig.getInitParameter(AC.stylesheet.getURI()) != null ? servletConfig.getInitParameter(AC.stylesheet.getURI()) : null),
             servletConfig.getInitParameter(AC.cacheStylesheet.getURI()) != null ? Boolean.parseBoolean(servletConfig.getInitParameter(AC.cacheStylesheet.getURI())) : false,
@@ -108,28 +107,14 @@ public class Application extends com.atomgraph.server.Application
         );
     }
     
-    public Application(final String datasetLocation, final String endpointURI, final String graphStoreURI, final String authUser, final String authPwd, final boolean preemptiveAuth,
-            final FileManager fileManager, final String ontologyURI, final OntModelSpec ontModelSpec, boolean cacheSitemap,
+    public Application(final Dataset dataset, final String endpointURI, final String graphStoreURI, final String authUser, final String authPwd, final boolean preemptiveAuth,
+            final FileManager fileManager, final String ontologyURI, final String rulesString, boolean cacheSitemap,
             final Source stylesheet, final boolean cacheStylesheet, final boolean resolvingUncached)
     {
-        super(datasetLocation, endpointURI, graphStoreURI, authUser, authPwd, preemptiveAuth,
-                fileManager, ontologyURI, ontModelSpec, cacheSitemap);
+        super(dataset, endpointURI, graphStoreURI, authUser, authPwd, preemptiveAuth,
+                fileManager, ontologyURI, rulesString, cacheSitemap);
         this.stylesheet = stylesheet;
         this.cacheStylesheet = cacheStylesheet;
-        
-        // initialize mapping for locally stored vocabularies
-        LocationMapper mapper = new PrefixMapper("prefix-mapping.n3"); // TO-DO: check if file exists?
-        LocationMapper.setGlobalLocationMapper(mapper);
-        if (log.isDebugEnabled()) log.debug("LocationMapper.get(): {}", LocationMapper.get());
-
-        DataManager manager = new DataManager(LocationMapper.get(), new ClientProvider().getClient(), new MediaTypesProvider().getMediaTypes(), preemptiveAuth, resolvingUncached);
-        FileManager.setStdLocators(manager);
-        FileManager.setGlobalFileManager(manager);
-        if (log.isDebugEnabled()) log.debug("FileManager.get(): {}", FileManager.get());
-
-        OntDocumentManager.getInstance().setFileManager(FileManager.get());
-        OntDocumentManager.getInstance().setCacheModels(isCacheSitemap()); // need to re-set after chaning FileManager
-        if (log.isDebugEnabled()) log.debug("OntDocumentManager.getInstance().getFileManager(): {} Cache ontologies: {}", OntDocumentManager.getInstance().getFileManager(), isCacheSitemap());
         
         // register plain RDF/XML writer as default
         RDFWriterRegistry.register(Lang.RDFXML, RDFFormat.RDFXML_PLAIN);
@@ -176,6 +161,11 @@ public class Application extends com.atomgraph.server.Application
         singletons.add(new TemplatesProvider(getStylesheet(), isCacheStylesheet())); // loads XSLT stylesheet
         
         if (log.isTraceEnabled()) log.trace("Application.init() with Classes: {} and Singletons: {}", classes, singletons);
+    }
+    
+    public static FileManager getFileManager(final LocationMapper locationMapper, final boolean preemptiveAuth, final boolean resolvingUncached)
+    {
+        return new DataManager(locationMapper, new ClientProvider().getClient(), new MediaTypesProvider().getMediaTypes(), preemptiveAuth, resolvingUncached);
     }
     
     public Source getStylesheet()
