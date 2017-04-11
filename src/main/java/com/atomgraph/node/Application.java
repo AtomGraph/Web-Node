@@ -70,7 +70,6 @@ import org.apache.jena.riot.RDFWriterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
-import javax.ws.rs.core.CacheControl;
 import javax.xml.transform.Source;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.util.LocationMapper;
@@ -102,7 +101,6 @@ public class Application extends com.atomgraph.server.Application
             new MediaTypes(), getClient(new DefaultClientConfig()),
             servletConfig.getInitParameter(A.maxGetRequestSize.getURI()) != null ? Integer.parseInt(servletConfig.getInitParameter(A.maxGetRequestSize.getURI())) : null,            
             servletConfig.getInitParameter(A.preemptiveAuth.getURI()) != null ? Boolean.parseBoolean(servletConfig.getInitParameter(A.preemptiveAuth.getURI())) : false,
-            servletConfig.getInitParameter(A.cacheControl.getURI()) != null ? CacheControl.valueOf(servletConfig.getInitParameter(A.cacheControl.getURI())) : null,
             getFileManager(new PrefixMapper("prefix-mapping.n3"),
                     com.atomgraph.client.Application.getClient(new DefaultClientConfig()),
                     new MediaTypes(),
@@ -118,12 +116,12 @@ public class Application extends com.atomgraph.server.Application
     }
     
     public Application(final Dataset dataset, final String endpointURI, final String graphStoreURI, final String authUser, final String authPwd,
-            final MediaTypes mediaTypes, final Client client, final Integer maxGetRequestSize, final boolean preemptiveAuth, final CacheControl cacheControl,
+            final MediaTypes mediaTypes, final Client client, final Integer maxGetRequestSize, final boolean preemptiveAuth,
             final FileManager fileManager, final String ontologyURI, final String rulesString, boolean cacheSitemap,
             final Source stylesheet, final boolean cacheStylesheet, final boolean resolvingUncached)
     {
         super(dataset, endpointURI, graphStoreURI, authUser, authPwd,
-                mediaTypes, client, maxGetRequestSize, preemptiveAuth, cacheControl,
+                mediaTypes, client, maxGetRequestSize, preemptiveAuth,
                 fileManager, ontologyURI, rulesString, cacheSitemap);
         this.stylesheet = stylesheet;
         this.cacheStylesheet = cacheStylesheet;
@@ -144,8 +142,8 @@ public class Application extends com.atomgraph.server.Application
         singletons.add(new OntologyProvider(getOntologyURI(), getOntModelSpec(), true));
         singletons.add(new TemplateProvider());
         singletons.add(new TemplateCallProvider());
-        singletons.add(new SPARQLEndpointProvider(this));
-        singletons.add(new GraphStoreProvider(this));
+        singletons.add(new SPARQLEndpointProvider());
+        singletons.add(new GraphStoreProvider());
         singletons.add(new DatasetProvider(getDataset()));
         singletons.add(new SPARQLClientProvider(getSPARQLClient()));
         singletons.add(new GraphStoreClientProvider(getGraphStoreClient()));        
