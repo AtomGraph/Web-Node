@@ -20,7 +20,6 @@ package com.atomgraph.node;
 import static com.atomgraph.client.Application.getSource;
 import com.atomgraph.client.MediaTypes;
 import com.atomgraph.client.locator.PrefixMapper;
-import org.apache.jena.util.FileManager;
 import java.util.HashSet;
 import java.util.Set;
 import javax.servlet.ServletConfig;
@@ -29,7 +28,6 @@ import com.atomgraph.client.provider.TemplatesProvider;
 import com.atomgraph.client.util.DataManager;
 import com.atomgraph.client.vocabulary.AC;
 import com.atomgraph.client.writer.ModelXSLTWriter;
-import static com.atomgraph.core.Application.getClient;
 import com.atomgraph.core.io.ResultSetProvider;
 import com.atomgraph.core.io.UpdateRequestReader;
 import com.atomgraph.core.provider.ClientProvider;
@@ -72,7 +70,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import javax.xml.transform.Source;
 import org.apache.jena.query.Dataset;
-import org.apache.jena.util.LocationMapper;
+import static com.atomgraph.core.Application.getClient;
 
 /**
  * JAX-RS application class.
@@ -85,6 +83,7 @@ public class Application extends com.atomgraph.server.Application
     
     private static final Logger log = LoggerFactory.getLogger(Application.class);
     
+    private final DataManager dataManager;
     private final Source stylesheet;
     private final Boolean cacheStylesheet;    
     private final Set<Class<?>> classes = new HashSet<>();
@@ -101,11 +100,11 @@ public class Application extends com.atomgraph.server.Application
             new MediaTypes(), getClient(new DefaultClientConfig()),
             servletConfig.getInitParameter(A.maxGetRequestSize.getURI()) != null ? Integer.parseInt(servletConfig.getInitParameter(A.maxGetRequestSize.getURI())) : null,            
             servletConfig.getInitParameter(A.preemptiveAuth.getURI()) != null ? Boolean.parseBoolean(servletConfig.getInitParameter(A.preemptiveAuth.getURI())) : false,
-            getFileManager(new PrefixMapper("prefix-mapping.n3"),
-                    com.atomgraph.client.Application.getClient(new DefaultClientConfig()),
-                    new MediaTypes(),
-                    servletConfig.getInitParameter(A.preemptiveAuth.getURI()) != null ? Boolean.parseBoolean(servletConfig.getInitParameter(A.preemptiveAuth.getURI())) : false,
-                    servletConfig.getInitParameter(AC.resolvingUncached.getURI()) != null ? Boolean.parseBoolean(servletConfig.getInitParameter(AC.resolvingUncached.getURI())) : false),
+            com.atomgraph.client.Application.getDataManager(new PrefixMapper(servletConfig.getInitParameter(AC.prefixMapping.getURI()) != null ? servletConfig.getInitParameter(AC.prefixMapping.getURI()) : null),
+                com.atomgraph.client.Application.getClient(new DefaultClientConfig()),
+                new MediaTypes(),
+                servletConfig.getInitParameter(A.preemptiveAuth.getURI()) != null ? Boolean.parseBoolean(servletConfig.getInitParameter(A.preemptiveAuth.getURI())) : false,
+                servletConfig.getInitParameter(AC.resolvingUncached.getURI()) != null ? Boolean.parseBoolean(servletConfig.getInitParameter(AC.resolvingUncached.getURI())) : false),
             servletConfig.getInitParameter(LDT.ontology.getURI()) != null ? servletConfig.getInitParameter(LDT.ontology.getURI()) : null,
             servletConfig.getInitParameter(AP.sitemapRules.getURI()) != null ? servletConfig.getInitParameter(AP.sitemapRules.getURI()) : null,
             servletConfig.getInitParameter(AP.cacheSitemap.getURI()) != null ? Boolean.valueOf(servletConfig.getInitParameter(AP.cacheSitemap.getURI())) : true,
@@ -117,12 +116,13 @@ public class Application extends com.atomgraph.server.Application
     
     public Application(final Dataset dataset, final String endpointURI, final String graphStoreURI, final String authUser, final String authPwd,
             final MediaTypes mediaTypes, final Client client, final Integer maxGetRequestSize, final boolean preemptiveAuth,
-            final FileManager fileManager, final String ontologyURI, final String rulesString, boolean cacheSitemap,
+            final DataManager dataManager, final String ontologyURI, final String rulesString, boolean cacheSitemap,
             final Source stylesheet, final boolean cacheStylesheet, final boolean resolvingUncached)
     {
         super(dataset, endpointURI, graphStoreURI, authUser, authPwd,
                 mediaTypes, client, maxGetRequestSize, preemptiveAuth,
-                fileManager, ontologyURI, rulesString, cacheSitemap);
+                dataManager, ontologyURI, rulesString, cacheSitemap);
+        this.dataManager = dataManager;
         this.stylesheet = stylesheet;
         this.cacheStylesheet = cacheStylesheet;
         
@@ -166,18 +166,17 @@ public class Application extends com.atomgraph.server.Application
         
         // Client singletons
         singletons.add(new MediaTypesProvider(getMediaTypes()));
-        singletons.add(new com.atomgraph.client.provider.DataManagerProvider());
+        singletons.add(new com.atomgraph.client.provider.DataManagerProvider(getDataManager()));
         singletons.add(new ModelXSLTWriter()); // writes XHTML responses
         singletons.add(new TemplatesProvider(getStylesheet(), isCacheStylesheet())); // loads XSLT stylesheet
         
         if (log.isTraceEnabled()) log.trace("Application.init() with Classes: {} and Singletons: {}", classes, singletons);
     }
     
-    public static FileManager getFileManager(final LocationMapper mapper, final Client client, final MediaTypes mediaTypes, final boolean preemptiveAuth, final boolean resolvingUncached)
+    @Override
+    public DataManager getDataManager()
     {
-        return new DataManager(mapper, client, mediaTypes, preemptiveAuth, resolvingUncached);
-        
-        // return new DataManager(mapper, new ClientProvider().getClient(), new MediaTypesProvider().getMediaTypes(), preemptiveAuth, resolvingUncached);
+        return dataManager;
     }
     
     public Source getStylesheet()
