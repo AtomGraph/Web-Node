@@ -71,6 +71,7 @@ import java.io.IOException;
 import javax.xml.transform.Source;
 import org.apache.jena.query.Dataset;
 import static com.atomgraph.core.Application.getClient;
+import org.apache.jena.ontology.OntDocumentManager;
 
 /**
  * JAX-RS application class.
@@ -85,7 +86,7 @@ public class Application extends com.atomgraph.server.Application
     
     private final DataManager dataManager;
     private final Source stylesheet;
-    private final Boolean cacheStylesheet;    
+    private final Boolean cacheStylesheet;
     private final Set<Class<?>> classes = new HashSet<>();
     private final Set<Object> singletons = new HashSet<>();
     
@@ -98,7 +99,7 @@ public class Application extends com.atomgraph.server.Application
             servletConfig.getInitParameter(org.apache.jena.sparql.engine.http.Service.queryAuthUser.getSymbol()) != null ? servletConfig.getInitParameter(org.apache.jena.sparql.engine.http.Service.queryAuthUser.getSymbol()) : null,
             servletConfig.getInitParameter(org.apache.jena.sparql.engine.http.Service.queryAuthPwd.getSymbol()) != null ? servletConfig.getInitParameter(org.apache.jena.sparql.engine.http.Service.queryAuthPwd.getSymbol()) : null,
             new MediaTypes(), getClient(new DefaultClientConfig()),
-            servletConfig.getInitParameter(A.maxGetRequestSize.getURI()) != null ? Integer.parseInt(servletConfig.getInitParameter(A.maxGetRequestSize.getURI())) : null,            
+            servletConfig.getInitParameter(A.maxGetRequestSize.getURI()) != null ? Integer.parseInt(servletConfig.getInitParameter(A.maxGetRequestSize.getURI())) : null,
             servletConfig.getInitParameter(A.preemptiveAuth.getURI()) != null ? Boolean.parseBoolean(servletConfig.getInitParameter(A.preemptiveAuth.getURI())) : false,
             com.atomgraph.client.Application.getDataManager(new PrefixMapper(servletConfig.getInitParameter(AC.prefixMapping.getURI()) != null ? servletConfig.getInitParameter(AC.prefixMapping.getURI()) : null),
                 com.atomgraph.client.Application.getClient(new DefaultClientConfig()),
@@ -139,14 +140,14 @@ public class Application extends com.atomgraph.server.Application
         // Server singletons
         singletons.add(new ApplicationProvider());
         singletons.add(new ServiceProvider(getService()));
-        singletons.add(new OntologyProvider(getOntologyURI(), getOntModelSpec(), true));
+        singletons.add(new OntologyProvider(OntDocumentManager.getInstance(), getOntologyURI(), getOntModelSpec(), true));
         singletons.add(new TemplateProvider());
         singletons.add(new TemplateCallProvider());
         singletons.add(new SPARQLEndpointProvider());
         singletons.add(new GraphStoreProvider());
         singletons.add(new DatasetProvider(getDataset()));
         singletons.add(new SPARQLClientProvider(getSPARQLClient()));
-        singletons.add(new GraphStoreClientProvider(getGraphStoreClient()));        
+        singletons.add(new GraphStoreClientProvider(getGraphStoreClient()));
         singletons.add(new SkolemizingModelProvider());
         singletons.add(new ResultSetProvider());
         singletons.add(new QueryParamProvider());
@@ -158,7 +159,7 @@ public class Application extends com.atomgraph.server.Application
         singletons.add(new ModelExceptionMapper());
         singletons.add(new DatatypeFormatExceptionMapper());
         singletons.add(new NotFoundExceptionMapper());
-        singletons.add(new ClientExceptionMapper());        
+        singletons.add(new ClientExceptionMapper());
         singletons.add(new ConfigurationExceptionMapper());
         singletons.add(new OntologyExceptionMapper());
         singletons.add(new ParameterExceptionMapper());
