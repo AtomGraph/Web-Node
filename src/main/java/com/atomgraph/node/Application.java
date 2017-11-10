@@ -55,7 +55,7 @@ import com.atomgraph.server.mapper.jena.RiotExceptionMapper;
 import com.atomgraph.server.model.impl.ResourceBase;
 import com.atomgraph.server.provider.ApplicationProvider;
 import com.atomgraph.server.provider.OntologyProvider;
-import com.atomgraph.server.provider.SkolemizingModelProvider;
+import com.atomgraph.server.io.SkolemizingModelProvider;
 import com.atomgraph.server.provider.TemplateCallProvider;
 import com.atomgraph.server.provider.TemplateProvider;
 import com.sun.jersey.api.client.Client;
