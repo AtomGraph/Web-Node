@@ -30,7 +30,6 @@ import com.atomgraph.client.vocabulary.AC;
 import com.atomgraph.client.writer.ModelXSLTWriter;
 import com.atomgraph.core.io.ResultSetProvider;
 import com.atomgraph.core.io.UpdateRequestReader;
-import com.atomgraph.core.provider.ClientProvider;
 import com.atomgraph.core.provider.DatasetProvider;
 import com.atomgraph.core.provider.GraphStoreClientProvider;
 import com.atomgraph.core.provider.GraphStoreProvider;
@@ -38,7 +37,6 @@ import com.atomgraph.core.provider.MediaTypesProvider;
 import com.atomgraph.core.provider.QueryParamProvider;
 import com.atomgraph.core.provider.SPARQLClientProvider;
 import com.atomgraph.core.provider.SPARQLEndpointProvider;
-import com.atomgraph.core.provider.ServiceProvider;
 import com.atomgraph.core.vocabulary.A;
 import com.atomgraph.core.vocabulary.SD;
 import com.atomgraph.processor.vocabulary.AP;
@@ -71,6 +69,8 @@ import java.io.IOException;
 import javax.xml.transform.Source;
 import org.apache.jena.query.Dataset;
 import static com.atomgraph.core.Application.getClient;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.sax.SAXTransformerFactory;
 import org.apache.jena.ontology.OntDocumentManager;
 
 /**
@@ -139,7 +139,6 @@ public class Application extends com.atomgraph.server.Application
 
         // Server singletons
         singletons.add(new ApplicationProvider());
-        singletons.add(new ServiceProvider(getService()));
         singletons.add(new OntologyProvider(OntDocumentManager.getInstance(), getOntologyURI(), getOntModelSpec(), true));
         singletons.add(new TemplateProvider());
         singletons.add(new TemplateCallProvider());
@@ -152,9 +151,6 @@ public class Application extends com.atomgraph.server.Application
         singletons.add(new ResultSetProvider());
         singletons.add(new QueryParamProvider());
         singletons.add(new UpdateRequestReader());
-        //singletons.add(new com.atomgraph.core.provider.MediaTypesProvider());
-        //singletons.add(new DataManagerProvider(getServletConfig()));
-        singletons.add(new ClientProvider(getClient()));
         singletons.add(new RiotExceptionMapper());
         singletons.add(new ModelExceptionMapper());
         singletons.add(new DatatypeFormatExceptionMapper());
@@ -169,7 +165,8 @@ public class Application extends com.atomgraph.server.Application
         singletons.add(new MediaTypesProvider(getMediaTypes()));
         singletons.add(new com.atomgraph.client.provider.DataManagerProvider(getDataManager()));
         singletons.add(new ModelXSLTWriter()); // writes XHTML responses
-        singletons.add(new TemplatesProvider(getStylesheet(), isCacheStylesheet())); // loads XSLT stylesheet
+        singletons.add(new TemplatesProvider(((SAXTransformerFactory)TransformerFactory.newInstance("net.sf.saxon.TransformerFactoryImpl", null)),
+                getDataManager(), getStylesheet(), isCacheStylesheet())); // loads XSLT stylesheet
         
         if (log.isTraceEnabled()) log.trace("Application.init() with Classes: {} and Singletons: {}", classes, singletons);
     }
