@@ -48,7 +48,7 @@
    [ lm:name "http://spinrdf.org/spin#" ;                                   lm:altName "etc/spin.ttl" ] ,
    [ lm:name "http://spinrdf.org/spin" ;                                    lm:altName "etc/spin.ttl" ] ,
    [ lm:name "http://spinrdf.org/spl#" ;                                    lm:altName "etc/spl.spin.ttl" ] ,
-   [ lm:name "http://spinrdf.org/spl" ;                                     lm:altName "etc/spl.spin.ttl" ]
+   [ lm:name "http://spinrdf.org/spl" ;                                     lm:altName "etc/spl.spin.ttl" ] ,
 
    [ lm:prefix "http://atomgraph.com/ns/client" ;                           lm:altName "com/atomgraph/client/ns.ttl" ] ,
    [ lm:prefix "http://rdfs.org/sioc/ns" ;                                  lm:altName "com/atomgraph/client/sioc.owl" ] ,
