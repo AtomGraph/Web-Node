@@ -61,7 +61,15 @@
             <param-name>com.sun.jersey.spi.container.ContainerResponseFilters</param-name>
             <param-value>com.atomgraph.server.filter.response.HypermediaFilter</param-value>
         </init-param>
+        <init-param>
+            <param-name>com.sun.jersey.spi.container.ContainerRequestFilters</param-name>
+            <param-value>com.atomgraph.client.filter.request.PostReplaceFilter</param-value>
+        </init-param>
     </servlet>
+    <servlet-mapping>
+        <servlet-name>default</servlet-name>
+        <url-pattern>/static/*</url-pattern>
+    </servlet-mapping>
     <servlet-mapping>
         <servlet-name>processor</servlet-name>
         <url-pattern>/*</url-pattern>
