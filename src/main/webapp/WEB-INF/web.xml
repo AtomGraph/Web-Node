@@ -58,12 +58,12 @@
             <param-value>com.atomgraph.node.Application</param-value>
         </init-param>
         <init-param>
-            <param-name>com.sun.jersey.spi.container.ContainerResponseFilters</param-name>
-            <param-value>com.atomgraph.server.filter.response.HypermediaFilter</param-value>
+            <param-name>com.sun.jersey.spi.container.ContainerRequestFilters</param-name>
+            <param-value>com.atomgraph.client.filter.request.PostReplaceFilter;com.atomgraph.node.filter.request.ClientParamRemovalFilter</param-value>
         </init-param>
         <init-param>
-            <param-name>com.sun.jersey.spi.container.ContainerRequestFilters</param-name>
-            <param-value>com.atomgraph.client.filter.request.PostReplaceFilter</param-value>
+            <param-name>com.sun.jersey.spi.container.ContainerResponseFilters</param-name>
+            <param-value>com.atomgraph.server.filter.response.HypermediaFilter</param-value>
         </init-param>
     </servlet>
     <servlet-mapping>
