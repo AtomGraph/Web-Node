@@ -14,7 +14,6 @@
  *  limitations under the License.
  *
  */
-
 package com.atomgraph.node;
 
 import static com.atomgraph.client.Application.getSource;
@@ -29,7 +28,6 @@ import javax.servlet.ServletConfig;
 import javax.ws.rs.core.Context;
 import com.atomgraph.client.util.DataManager;
 import com.atomgraph.client.vocabulary.AC;
-import com.atomgraph.client.writer.ModelXSLTWriter;
 import com.atomgraph.core.io.ResultSetProvider;
 import com.atomgraph.core.io.UpdateRequestReader;
 import com.atomgraph.core.provider.MediaTypesProvider;
@@ -66,13 +64,14 @@ import java.io.IOException;
 import javax.xml.transform.Source;
 import org.apache.jena.query.Dataset;
 import static com.atomgraph.core.Application.getClient;
-import com.atomgraph.core.io.ModelProvider;
 import com.atomgraph.core.mapper.AuthenticationExceptionMapper;
 import com.atomgraph.core.provider.ClientProvider;
 import com.atomgraph.core.provider.DataManagerProvider;
 import com.atomgraph.core.provider.ServiceProvider;
 import com.atomgraph.core.riot.RDFLanguages;
 import com.atomgraph.core.riot.lang.RDFPostReaderFactory;
+import com.atomgraph.node.client.ModelXSLTWriter;
+import com.atomgraph.node.provider.ClientUriInfoProvider;
 import com.atomgraph.server.mapper.ConstraintViolationExceptionMapper;
 import javax.ws.rs.WebApplicationException;
 import javax.xml.transform.Templates;
@@ -188,7 +187,7 @@ public class Application extends com.atomgraph.server.Application
         singletons.add(new QueryParseExceptionMapper());
         
         // Web-Client singletons
-        singletons.add(new ModelProvider());
+        //singletons.add(new ModelProvider());
         singletons.add(new com.atomgraph.client.provider.DataManagerProvider(getDataManager()));
         singletons.add(new ClientProvider(getClient()));
         singletons.add(new com.atomgraph.client.mapper.NotFoundExceptionMapper());
@@ -198,6 +197,9 @@ public class Application extends com.atomgraph.server.Application
         singletons.add(new AuthenticationExceptionMapper());
         singletons.add(new ModelXSLTWriter(getTemplates(), getOntModelSpec())); // writes XHTML responses
         
+        // Web-Node singletons
+        singletons.add(new ClientUriInfoProvider());
+
         if (log.isTraceEnabled()) log.trace("Application.init() with Classes: {} and Singletons: {}", classes, singletons);
     }
     
