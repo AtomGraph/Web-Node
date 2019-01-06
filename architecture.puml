@@ -1,0 +1,38 @@
+@startuml
+
+() "Linked Data" as LD
+() "HTML" as HTML
+() "SPARQL\nendpoint" as SE
+
+package "LDT app" {
+    file Ontology [
+        Ontology
+        <size:36><&document></size>
+    ]
+    file Stylesheet [
+        Stylesheet
+        <size:36><&document></size>
+    ]
+
+    database Service
+    [Service] - SE : provides
+}
+
+node "Web-Node" {
+
+    [Web-Node] --> [Processor] : contains
+    [Web-Node] --> [Web-Client] : contains
+    LD - [Web-Node] : serves
+    HTML - [Web-Node] : serves
+
+    [Processor] --> [Core] : extends
+    [Processor] --> Ontology : processes
+    [Processor] --> SE : queries/updates
+
+
+    [Web-Client] --> [Core] : extends
+    [Web-Client] - Stylesheet : processes
+
+}
+
+@enduml
