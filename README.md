@@ -4,7 +4,7 @@ Includes both the Processor/Server and the Web-Client
 Nodes can manage each others RDF data in a distributed way, using [LDT hypermedia](https://atomgraph.github.io/Linked-Data-Templates/#hypermedia) as the read-write Linked Data protocol.
 Web-Node processes LDT ontologies and serves/accepts RDF data as the [Processor](../../../Processor), but also renders that data, as well RDF data from external sources, as the [Web-Client](../../../Web-Client) does.
 
-![AtomGraph Web-Node architecture](raw/master/architecture.png)
+![AtomGraph Web-Node architecture](../../raw/master/architecture.png)
 
 =====
 
