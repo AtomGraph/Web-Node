@@ -6,6 +6,7 @@ Web-Node processes LDT ontologies and serves/accepts RDF data as the [Processor]
 
 ![AtomGraph Web-Node architecture](../../raw/master/architecture.png)
 
+Usage
 =====
 
 Docker
