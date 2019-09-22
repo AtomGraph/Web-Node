@@ -1,8 +1,8 @@
 # Web-Node
-Includes both the Processor/Server and the Web-Client
+Includes both the [AtomGraph Processor](https://github.com/AtomGraph/Processor) and the [AtomGraph Web-Client](https://github.com/AtomGraph/Web-Client)
 
 Nodes can manage each others RDF data in a distributed way, using [LDT hypermedia](https://atomgraph.github.io/Linked-Data-Templates/#hypermedia) as the read-write Linked Data protocol.
-Web-Node processes LDT ontologies and serves/accepts RDF data as the [Processor](../../../Processor), but also renders that data, as well RDF data from external sources, as the [Web-Client](../../../Web-Client) does.
+Web-Node processes LDT ontologies and serves/accepts RDF data as the Processor, but also renders that data, as well RDF data from external sources, as the Web-Client does.
 
 ![AtomGraph Web-Node architecture](../../raw/master/architecture.png)
 
@@ -12,7 +12,7 @@ Usage
 Docker
 ------
 
-Processor is available from Docker Hub as [`atomgraph/web-node](https://hub.docker.com/r/atomgraph/web-node/) image.
+Processor is available from Docker Hub as [`atomgraph/web-node`](https://hub.docker.com/r/atomgraph/web-node/) image.
 It accepts the following environment variables (that become webapp context parameters):
 
 <dl>
@@ -59,7 +59,7 @@ Run the container with Wikidata's example like this (replace `//c/Users/namedgra
         -v "//c/Users/namedgraph/WebRoot/Processor/examples/location-mapping.n3":"/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/custom-mapping.n3" \
         atomgraph/processor
 
-After that, access http://localhost:8080/birthdays?limit=10 and you will retrieve RDF data with 10 people (or "entities") that have a birthday today.
+After that, access [`http://localhost:8080/birthdays`](http://localhost:8080/birthdays) and you will retrieve RDF data with the people (or "entities") that have a birthday today.
 
 Maven
 -----

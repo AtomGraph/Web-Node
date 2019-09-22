@@ -33,9 +33,6 @@ import com.atomgraph.core.io.UpdateRequestReader;
 import com.atomgraph.core.provider.MediaTypesProvider;
 import com.atomgraph.core.provider.QueryParamProvider;
 import com.atomgraph.core.vocabulary.A;
-import com.atomgraph.core.vocabulary.SD;
-import com.atomgraph.processor.vocabulary.AP;
-import com.atomgraph.processor.vocabulary.LDT;
 import com.atomgraph.server.mapper.ClientExceptionMapper;
 import com.atomgraph.server.mapper.ConfigurationExceptionMapper;
 import com.atomgraph.server.mapper.ModelExceptionMapper;
@@ -51,7 +48,6 @@ import com.atomgraph.server.provider.OntologyProvider;
 import com.atomgraph.server.io.SkolemizingModelProvider;
 import com.atomgraph.server.provider.TemplateCallProvider;
 import com.atomgraph.server.provider.TemplateProvider;
-import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import java.net.URISyntaxException;
 import javax.annotation.PostConstruct;
@@ -62,15 +58,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import javax.xml.transform.Source;
-import org.apache.jena.query.Dataset;
-import static com.atomgraph.core.Application.getClient;
 import com.atomgraph.core.mapper.AuthenticationExceptionMapper;
 import com.atomgraph.core.provider.ClientProvider;
 import com.atomgraph.core.provider.DataManagerProvider;
 import com.atomgraph.core.provider.ServiceProvider;
 import com.atomgraph.core.riot.RDFLanguages;
 import com.atomgraph.core.riot.lang.RDFPostReaderFactory;
-import com.atomgraph.node.client.ModelXSLTWriter;
+import com.atomgraph.node.client.DatasetXSLTWriter;
 import com.atomgraph.node.provider.ClientUriInfoProvider;
 import com.atomgraph.server.mapper.ConstraintViolationExceptionMapper;
 import javax.ws.rs.WebApplicationException;
@@ -101,37 +95,22 @@ public class Application extends com.atomgraph.server.Application
     
     public Application(@Context ServletConfig servletConfig) throws URISyntaxException, IOException
     {
-        this(
-            servletConfig.getServletContext().getInitParameter(A.dataset.getURI()) != null ? getDataset(servletConfig.getServletContext().getInitParameter(A.dataset.getURI()), null) : null,
-            servletConfig.getServletContext().getInitParameter(SD.endpoint.getURI()) != null ? servletConfig.getServletContext().getInitParameter(SD.endpoint.getURI()) : null,
-            servletConfig.getServletContext().getInitParameter(A.graphStore.getURI()) != null ? servletConfig.getServletContext().getInitParameter(A.graphStore.getURI()) : null,
-            servletConfig.getServletContext().getInitParameter(org.apache.jena.sparql.engine.http.Service.queryAuthUser.getSymbol()) != null ? servletConfig.getServletContext().getInitParameter(org.apache.jena.sparql.engine.http.Service.queryAuthUser.getSymbol()) : null,
-            servletConfig.getServletContext().getInitParameter(org.apache.jena.sparql.engine.http.Service.queryAuthPwd.getSymbol()) != null ? servletConfig.getServletContext().getInitParameter(org.apache.jena.sparql.engine.http.Service.queryAuthPwd.getSymbol()) : null,
-            new MediaTypes(), getClient(new DefaultClientConfig()),
-            servletConfig.getServletContext().getInitParameter(A.maxGetRequestSize.getURI()) != null ? Integer.parseInt(servletConfig.getServletContext().getInitParameter(A.maxGetRequestSize.getURI())) : null,
-            servletConfig.getServletContext().getInitParameter(A.preemptiveAuth.getURI()) != null ? Boolean.parseBoolean(servletConfig.getServletContext().getInitParameter(A.preemptiveAuth.getURI())) : false,
+        this(servletConfig,
             com.atomgraph.client.Application.getDataManager(new PrefixMapper(servletConfig.getServletContext().getInitParameter(AC.prefixMapping.getURI()) != null ? servletConfig.getServletContext().getInitParameter(AC.prefixMapping.getURI()) : null),
                 com.atomgraph.client.Application.getClient(new DefaultClientConfig()),
                 new MediaTypes(),
                 servletConfig.getServletContext().getInitParameter(A.preemptiveAuth.getURI()) != null ? Boolean.parseBoolean(servletConfig.getServletContext().getInitParameter(A.preemptiveAuth.getURI())) : false,
                 servletConfig.getServletContext().getInitParameter(AC.resolvingUncached.getURI()) != null ? Boolean.parseBoolean(servletConfig.getServletContext().getInitParameter(AC.resolvingUncached.getURI())) : false),
-            servletConfig.getServletContext().getInitParameter(LDT.ontology.getURI()) != null ? servletConfig.getServletContext().getInitParameter(LDT.ontology.getURI()) : null,
-            servletConfig.getServletContext().getInitParameter(AP.sitemapRules.getURI()) != null ? servletConfig.getServletContext().getInitParameter(AP.sitemapRules.getURI()) : null,
-            servletConfig.getServletContext().getInitParameter(AP.cacheSitemap.getURI()) != null ? Boolean.valueOf(servletConfig.getServletContext().getInitParameter(AP.cacheSitemap.getURI())) : true,
             getSource(servletConfig.getServletContext(), servletConfig.getServletContext().getInitParameter(AC.stylesheet.getURI()) != null ? servletConfig.getServletContext().getInitParameter(AC.stylesheet.getURI()) : null),
             servletConfig.getServletContext().getInitParameter(AC.cacheStylesheet.getURI()) != null ? Boolean.parseBoolean(servletConfig.getServletContext().getInitParameter(AC.cacheStylesheet.getURI())) : false,
-            servletConfig.getServletContext().getInitParameter(AC.resolvingUncached.getURI()) != null ? Boolean.parseBoolean(servletConfig.getServletContext().getInitParameter(AC.resolvingUncached.getURI())) : false
+            servletConfig.getServletContext().getInitParameter(AC.resolvingUncached.getURI()) != null ? Boolean.parseBoolean(servletConfig.getServletContext().getInitParameter(AC.resolvingUncached.getURI())) : null,
+            servletConfig.getServletContext().getInitParameter(AC.sitemapRules.getURI()) != null ? servletConfig.getServletContext().getInitParameter(AC.sitemapRules.getURI()) : null
         );
     }
-    
-    public Application(final Dataset dataset, final String endpointURI, final String graphStoreURI, final String authUser, final String authPwd,
-            final MediaTypes mediaTypes, final Client client, final Integer maxGetRequestSize, final boolean preemptiveAuth,
-            final DataManager dataManager, final String ontologyURI, final String rulesString, boolean cacheSitemap,
-            final Source stylesheet, final boolean cacheStylesheet, final boolean resolvingUncached)
+    public Application(ServletConfig servletConfig,
+            final DataManager dataManager, final Source stylesheet, final boolean cacheStylesheet, final boolean resolvingUncached, final String rulesString) throws URISyntaxException, IOException
     {
-        super(dataset, endpointURI, graphStoreURI, authUser, authPwd,
-                mediaTypes, client, maxGetRequestSize, preemptiveAuth,
-                dataManager, ontologyURI, rulesString, cacheSitemap);
+        super(servletConfig);
         this.dataManager = dataManager;
         this.stylesheet = stylesheet;
         this.cacheStylesheet = cacheStylesheet;
@@ -195,7 +174,7 @@ public class Application extends com.atomgraph.server.Application
         singletons.add(new UniformInterfaceExceptionMapper());
         singletons.add(new ClientHandlerExceptionMapper());
         singletons.add(new AuthenticationExceptionMapper());
-        singletons.add(new ModelXSLTWriter(getTemplates(), getOntModelSpec())); // writes XHTML responses
+        singletons.add(new DatasetXSLTWriter(getTemplates(), getOntModelSpec())); // writes XHTML responses
         
         // Web-Node singletons
         singletons.add(new ClientUriInfoProvider());

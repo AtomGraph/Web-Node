@@ -36,6 +36,7 @@ public class ClientParamRemovalFilter implements ContainerRequestFilter, Resourc
 {
 
     public final static List<String> CLIENT_PARAMS = Arrays.asList(AC.uri.getLocalName(), AC.endpoint.getLocalName(),
+            AC.limit.getLocalName(), AC.offset.getLocalName(), AC.order_by.getLocalName(), AC.desc.getLocalName(),
             AC.mode.getLocalName(), AC.accept.getLocalName());
     
     @Override

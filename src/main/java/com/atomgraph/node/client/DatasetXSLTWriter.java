@@ -29,10 +29,10 @@ import org.apache.jena.ontology.OntModelSpec;
  *
  * @author Martynas Jusevičius <martynas@atomgraph.com>
  */
-public class ModelXSLTWriter extends com.atomgraph.client.writer.ModelXSLTWriter
+public class DatasetXSLTWriter extends com.atomgraph.client.writer.DatasetXSLTWriter
 {
     
-    public ModelXSLTWriter(Templates templates, OntModelSpec ontModelSpec)
+    public DatasetXSLTWriter(Templates templates, OntModelSpec ontModelSpec)
     {
         super(templates, ontModelSpec);
     }
